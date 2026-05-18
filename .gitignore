@@ -1,0 +1,12 @@
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+data/galgame_details_cache.json
+data/_tmp_galgame_test*.json
+bangumi-oauth-nsfw-reference.md
+DEPLOYMENT.md
+AGENTS.md
+_redirects

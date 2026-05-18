@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>目标是Galgame大师 · 评分挑战</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f2f2f7;
+  --surface:   #ffffff;
+  --surface2:  #f2f2f7;
+  --border:    #d8d8e8;
+  --text:      #1c1c2e;
+  --muted:     #8e8ea0;
+  --green:     #1fa85a;
+  --red:       #e0344a;
+  --pink:      #f09199;   /* Bangumi accent */
+  --pink-deep: #e07282;   /* slightly deeper for gradients/hover */
+  --yellow:    #c8900a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 12px 48px;
+}
+
+/* ── Accent bar ── */
+.accent-bar {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--pink), var(--pink-deep), var(--pink));
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ── Header ── */
+header {
+  width: 100%;
+  max-width: 840px;
+  padding: 22px 0 6px;
+  text-align: center;
+  position: relative;
+}
+
+h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 5px;
+  letter-spacing: 0.04em;
+}
+
+#btn-help, #btn-mute {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+#btn-help { right: 0; top: 22px; }
+#btn-mute { right: 0; top: 56px; font-size: 0.85rem; }
+#btn-help:hover, #btn-mute:hover { border-color: var(--pink); color: var(--pink); }
+#btn-mute.is-muted { color: var(--pink); border-color: var(--pink); }
+
+/* ── Stats bar ── */
+.stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 0;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.stat-val {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.15s;
+  min-width: 1.4ch;
+  text-align: center;
+}
+.stat-val.bump { transform: scale(1.35); }
+
+.stat-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+#st-lives {
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  color: var(--red);
+}
+#st-lives.is-timer {
+  color: var(--text);
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+}
+#st-lives.is-timer-warn { color: var(--pink-deep); }
+#st-streak.is-speed-2 { color: #e9a23b; }
+#st-streak.is-speed-3 { color: var(--pink); }
+#st-streak.is-speed-4 { color: var(--red); text-shadow: 0 0 6px rgba(224,52,74,0.35); }
+
+/* ── Prompt ── */
+.prompt {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 18px 0 14px;
+  min-height: 1.3em;
+  text-align: center;
+  transition: color 0.3s;
+}
+.prompt.correct { color: var(--green); }
+.prompt.wrong   { color: var(--red); }
+.prompt.countdown {
+  color: var(--pink-deep); font-weight: 700;
+  font-size: 1.35rem; letter-spacing: 0.04em;
+}
+
+/* ── Arena ── */
+.arena {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 840px;
+}
+
+.vs-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+}
+.vs-badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* ── Card ── */
+.card {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.18s ease, border-color 0.25s, box-shadow 0.25s;
+  user-select: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+
+@media (hover: hover) {
+  .card:hover:not(.locked) {
+    transform: translateY(-6px);
+    border-color: #c8c8da;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+  }
+}
+
+.card.locked { cursor: default; }
+
+.card.state-correct {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px var(--green), 0 12px 32px rgba(31,168,90,0.12);
+}
+.card.state-wrong {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px var(--red);
+}
+.card.state-winner {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 2px var(--pink), 0 12px 32px rgba(240,145,153,0.15);
+}
+
+.card-cover-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--surface2);
+}
+.card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.card-cover-wrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 35%;
+  background: linear-gradient(transparent, rgba(255,255,255,0.6));
+  pointer-events: none;
+}
+
+.card-body { padding: 12px 14px 14px; }
+
+.card-name {
+  font-size: 0.87rem;
+  font-weight: 600;
+  line-height: 1.45;
+  height: 2.9em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text);
+}
+
+.card-link {
+  display: none;
+  font-size: 0.68rem;
+  color: var(--pink);
+  text-decoration: none;
+  margin-left: 6px;
+  border: 1px solid var(--pink);
+  border-radius: 4px;
+  padding: 0 3px;
+  transition: background 0.15s, color 0.15s;
+}
+.card-link.show { display: inline; }
+.card-link:hover { background: var(--pink); color: #fff; }
+
+.card-date {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 3px;
+  margin-bottom: 1px;
+}
+
+.card-score-wrap {
+  margin-top: 10px;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-score {
+  font-size: 2rem;
+  font-weight: 800;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.35s, transform 0.35s;
+  line-height: 1;
+  color: #e07282;
+}
+.card-score.show { opacity: 1; transform: translateY(0); }
+.card-score.question { color: var(--muted); letter-spacing: 0.05em; }
+
+.score-badge {
+  font-size: 1.3rem;
+  opacity: 0;
+  transition: opacity 0.25s 0.2s;
+}
+.score-badge.show { opacity: 1; }
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  border-radius: 16px;
+}
+.card-overlay.flash { opacity: 1; }
+
+
+/* ── Settings ── */
+.settings-row {
+  width: 100%;
+  max-width: 840px;
+  margin-top: 18px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.settings-row .settings { margin-top: 0; flex: 1; }
+.mode-toggle {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.mode-toggle:hover { color: var(--text); }
+.mode-toggle[aria-pressed="true"] {
+  background: var(--pink-deep);
+  color: #fff;
+  border-color: var(--pink-deep);
+}
+.settings {
+  width: 100%;
+  max-width: 840px;
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+}
+
+.settings summary {
+  padding: 9px 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings summary::-webkit-details-marker { display: none; }
+.settings[open] summary { border-bottom: 1px solid var(--border); }
+.settings summary .chevron {
+  margin-left: auto;
+  transition: transform 0.2s;
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+.settings[open] summary .chevron { transform: rotate(180deg); }
+
+.preset-chip {
+  margin-left: 10px;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--muted);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.preset-chip:hover { color: var(--pink-deep); border-color: var(--pink); }
+.preset-chip.active {
+  background: var(--pink-deep);
+  color: #fff;
+  border-color: var(--pink-deep);
+}
+
+.settings-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  flex: 1;
+}
+.param-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+.param-label strong { color: var(--text); font-weight: 700; }
+input[type=range] { width: 100%; accent-color: var(--pink); cursor: pointer; }
+.param-desc { font-size: 0.68rem; color: var(--muted); line-height: 1.4; }
+.auth-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#btn-bgm-login,
+#btn-bgm-logout {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+#btn-bgm-login:hover,
+#btn-bgm-logout:hover {
+  border-color: var(--pink);
+  color: var(--pink-deep);
+}
+#btn-bgm-login.is-hidden,
+#btn-bgm-logout.is-hidden { display: none; }
+
+.settings-sep { width: 100%; height: 1px; background: var(--border); margin: 2px 0; }
+
+.param-checks { gap: 8px; }
+.param-checks label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.8rem; cursor: pointer;
+}
+.param-checks input[type=checkbox] {
+  width: 15px; height: 15px; accent-color: var(--pink); cursor: pointer;
+}
+
+.param-restart { justify-content: flex-end; }
+#btn-restart {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#btn-restart:hover { background: var(--pink); border-color: var(--pink); color: #fff; }
+
+/* ── Footer ── */
+.hint {
+  margin-top: 16px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* ── Loading ── */
+#loading {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; font-size: 0.9rem; color: var(--muted); z-index: 99;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border); border-top-color: var(--pink);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modals ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(200,200,220,0.55); backdrop-filter: blur(4px);
+  flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+}
+.modal-overlay.show { display: flex; }
+
+.gameover-box, .help-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.14);
+  animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.gameover-box { text-align: center; padding: 44px 56px; max-width: 400px; width: 90%; }
+.help-box { padding: 36px 44px; max-width: 400px; width: 90%; }
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.gameover-icon {
+  font-size: 3.2rem; margin-bottom: 14px; display: block;
+  animation: iconPop 0.4s 0.1s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes iconPop { from { transform: scale(0); } to { transform: scale(1); } }
+
+.gameover-box h2 { font-size: 1.45rem; font-weight: 800; margin-bottom: 6px; color: var(--text); }
+.gameover-box h2.is-master {
+  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+#go-stats { color: var(--muted); font-size: 0.88rem; line-height: 2.1; margin: 14px 0 16px; }
+#go-stats strong { color: var(--text); }
+
+.go-tip {
+  display: none;
+  margin: 14px auto 0;
+  padding: 8px 14px;
+  background: var(--surface2);
+  border-radius: 10px;
+  font-size: 0.82rem;
+  color: var(--pink-deep);
+  line-height: 1.5;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.go-tip.show { display: block; }
+.go-diff-wrap {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.go-diff-wrap > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-block;
+  color: var(--muted);
+  user-select: none;
+  letter-spacing: 0.03em;
+  transition: color 0.15s;
+}
+.go-diff-wrap > summary::-webkit-details-marker { display: none; }
+.go-diff-wrap > summary::before {
+  content: '▸ ';
+  font-size: 0.7rem;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.go-diff-wrap[open] > summary::before { content: '▾ '; }
+.go-diff-wrap > summary:hover { color: var(--pink-deep); }
+.go-diff {
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.diff-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: left;
+}
+.diff-row .diff-label { letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.diff-row .diff-bar-track {
+  display: block;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.diff-row .diff-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.diff-row .diff-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text);
+}
+.diff-row.empty .diff-count { color: var(--muted); font-weight: 400; }
+
+#go-restart {
+  background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+  color: #fff; border: none; border-radius: 10px;
+  padding: 11px 36px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s; width: 160px;
+}
+#go-restart:hover { opacity: 0.88; transform: translateY(-1px); }
+#go-share {
+  display: block; width: 160px; margin: 10px auto 0;
+  background: var(--surface2); color: var(--muted);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 9px 0; font-size: 0.85rem; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+#go-share:hover { border-color: var(--pink); color: var(--pink); }
+
+.help-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; color: var(--text); }
+.help-steps { list-style: none; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+.help-steps li {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 0.86rem; color: var(--muted); line-height: 1.5;
+}
+.help-steps li .step-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: var(--pink); margin-top: 1px;
+}
+.help-tip {
+  margin-top: 16px; padding: 10px 14px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.78rem; color: var(--muted); line-height: 1.5; text-align: left;
+}
+.help-close {
+  margin-top: 16px; width: 100%;
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 0; font-size: 0.85rem; cursor: pointer;
+  transition: background 0.15s;
+}
+.help-close:hover { background: var(--border); }
+.help-secondary {
+  margin-top: 8px; width: 100%;
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 0; font-size: 0.85rem; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.help-secondary:hover { background: var(--surface2); color: var(--text); }
+.mode-confirm-desc {
+  font-size: 0.85rem; color: var(--muted); line-height: 1.7;
+  margin: 4px 0 18px; text-align: center;
+}
+.mode-confirm-desc strong { color: var(--pink-deep); }
+
+.new-record {
+  color: var(--pink);
+  font-weight: 700;
+  font-size: 0.68rem;
+  margin-left: 4px;
+}
+.mode-badge {
+  display: none;
+  margin: -6px auto 14px;
+  padding: 4px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--pink-deep);
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+.mode-badge.show { display: inline-block; }
+
+@media (max-width: 520px) {
+  .arena { gap: 6px; }
+  .vs-col { width: 28px; }
+  .vs-badge { width: 26px; height: 26px; font-size: 0.6rem; }
+  .card-cover-wrap { aspect-ratio: 2 / 3; }
+  .card-body { padding: 8px 9px 10px; }
+  .card-name { font-size: 0.75rem; min-height: 2.2em; }
+  .card-date { font-size: 0.68rem; }
+  .card-score { font-size: 1.5rem; }
+  .card-score-wrap { margin-top: 6px; height: 2rem; }
+  .gameover-box { padding: 36px 28px; }
+  .help-box { padding: 28px 24px; }
+  h1 { font-size: 1.45rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="accent-bar"></div>
+<div id="loading"><div class="spinner"></div><span>加载中…</span></div>
+
+<header>
+  <h1>目标是Galgame大师</h1>
+  <p class="subtitle">Galgame Master &nbsp;·&nbsp; 哪款 galgame 的评分更高？</p>
+  <button id="btn-mute" title="静音切换">🔊</button>
+  <button id="btn-help" title="玩法说明">?</button>
+  <div class="stats">
+    <div class="stat-chip">
+      <span class="stat-val" id="st-lives">♥♥♥♥♥</span>
+      <span class="stat-label" id="st-lives-label">机会</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-val" id="st-streak">0</span>
+      <span class="stat-label">连击</span>
+    </div>
+    <div class="stat-chip">
+      <span class="stat-val" id="st-total">0</span>
+      <span class="stat-label" id="st-total-label">已答</span>
+    </div>
+  </div>
+</header>
+
+<div class="prompt" id="prompt">哪款 galgame 的评分更高？</div>
+
+<div class="arena">
+  <div class="card" id="card-a" onclick="onSelect('a')">
+    <div class="card-cover-wrap"><img class="card-cover" id="img-a" alt=""></div>
+    <div class="card-overlay" id="overlay-a"></div>
+    <div class="card-body">
+      <div class="card-name"><span id="name-a"></span><a class="card-link" id="link-a" target="_blank" rel="noopener" title="在 Bangumi 查看" onclick="event.stopPropagation()">↗</a></div>
+      <div class="card-date" id="date-a"></div>
+      <div class="card-score-wrap">
+        <div class="card-score" id="score-a"></div>
+        <div class="score-badge" id="badge-a"></div>
+      </div>
+    </div>
+  </div>
+  <div class="vs-col"><div class="vs-badge">VS</div></div>
+  <div class="card" id="card-b" onclick="onSelect('b')">
+    <div class="card-cover-wrap"><img class="card-cover" id="img-b" alt=""></div>
+    <div class="card-overlay" id="overlay-b"></div>
+    <div class="card-body">
+      <div class="card-name"><span id="name-b"></span><a class="card-link" id="link-b" target="_blank" rel="noopener" title="在 Bangumi 查看" onclick="event.stopPropagation()">↗</a></div>
+      <div class="card-date" id="date-b"></div>
+      <div class="card-score-wrap">
+        <div class="card-score" id="score-b"></div>
+        <div class="score-badge" id="badge-b"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="settings-row">
+<button id="btn-mode" class="mode-toggle" type="button" aria-pressed="false">⏱ 限时模式</button>
+<details class="settings">
+  <summary>⚙ 过滤设置 <button id="btn-preset-recent" class="preset-chip" type="button" title="只看近20年">近20年</button> <span class="chevron">▼</span></summary>
+  <div class="settings-body">
+    <div class="param">
+      <div class="param-label">最低评分人数 <strong id="lbl-votes">50</strong></div>
+      <input type="range" id="sl-votes" min="20" max="1000" step="10" value="50">
+      <div class="param-desc">过滤冷门游戏，减少噪声评分</div>
+    </div>
+    <div class="param">
+      <div class="param-label">开始年份 <strong id="lbl-yr-min">不限</strong></div>
+      <input type="range" id="sl-yr-min" min="1996" max="2026" step="1" value="1996">
+      <div class="param-desc">滑到最左 = 不限下界</div>
+    </div>
+    <div class="param">
+      <div class="param-label">结束年份 <strong id="lbl-yr-max">2026</strong></div>
+      <input type="range" id="sl-yr-max" min="1996" max="2026" step="1" value="2026">
+    </div>
+    <div class="settings-sep"></div>
+    <div class="param param-checks">
+      <div class="param-label" style="margin-bottom:6px">排除标签</div>
+      <label><input type="checkbox" id="cb-guochan"> 排除国产</label>
+      <label><input type="checkbox" id="cb-theatre"> 排除FD</label>
+      <label><input type="checkbox" id="cb-ova"> 排除同人</label>
+      <label><input type="checkbox" id="cb-pamen"> 排除短篇</label>
+      <label><input type="checkbox" id="cb-oumei" checked> 排除乙女/BL</label>
+      <label><input type="checkbox" id="cb-short"> 排除R18/拔作</label>
+      <label><input type="checkbox" id="cb-recap"> 排除全年龄</label>
+    </div>
+    <div class="settings-sep"></div>
+    <div class="param">
+      <div class="param-label">Bangumi 授权</div>
+      <div class="auth-actions">
+        <a id="btn-bgm-login" href="/api/bgm-oauth-start">登录 Bangumi</a>
+        <button id="btn-bgm-logout" type="button">退出</button>
+      </div>
+      <div class="param-desc" id="bgm-auth-status">未登录时只能使用公开封面；登录后可按账号权限获取受限封面。</div>
+    </div>
+    <div class="param param-restart">
+      <div class="param-desc" style="margin-bottom:8px">候选池：<strong id="pool-size">—</strong></div>
+      <button id="btn-restart">↺ 重新开始（应用过滤）</button>
+    </div>
+  </div>
+</details>
+</div>
+
+<div id="gameover" class="modal-overlay">
+  <div class="gameover-box">
+    <span class="gameover-icon" id="go-icon">🎬</span>
+    <h2 id="go-title">游戏结束</h2>
+    <div id="go-mode" class="mode-badge"></div>
+    <p id="go-stats"></p>
+    <p id="go-best" style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;line-height:1.9;"></p>
+    <button id="go-restart">再来一局</button>
+    <button id="go-share" onclick="shareResult()">保存结果</button>
+    <p id="go-tip" class="go-tip"></p>
+    <details id="go-diff-wrap" class="go-diff-wrap">
+      <summary>分差统计</summary>
+      <div id="go-diff" class="go-diff"></div>
+    </details>
+  </div>
+</div>
+
+<div id="mode-confirm" class="modal-overlay">
+  <div class="help-box">
+    <h3>切换到限时模式？</h3>
+    <p class="mode-confirm-desc">
+      <strong>90 秒</strong>倒计时挑战，无机会限制<br>
+      争取在时间用完前答对尽可能多的题目
+    </p>
+    <button class="help-close" id="btn-mode-confirm">开始限时挑战</button>
+    <button class="help-secondary" id="btn-mode-cancel">取消</button>
+  </div>
+</div>
+
+<div id="help-overlay" class="modal-overlay">
+  <div class="help-box">
+    <h3>玩法说明</h3>
+    <ul class="help-steps">
+      <li>
+        <span class="step-num">1</span>
+        <span>每轮显示两款 galgame，点击你认为 Bangumi 评分更高的那款</span>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <span>答错扣一条机会，共 5 条，全部用完游戏结束</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <span>在 5 条机会用完前完成 50 题，你就是 Galgame 大师！</span>
+      </li>
+    </ul>
+    <div class="help-tip">提示：点击底部「过滤设置」可以调整候选游戏池，例如限定年份范围，或排除 FD、同人、短篇、R18 等标签。</div>
+    <button class="help-close" id="btn-help-close">知道了</button>
+  </div>
+</div>
+
+<div class="hint">数据来源：<a href="https://bangumi.tv/" target="_blank" rel="noopener" style="color:#0084b4;text-decoration:none;">Bangumi</a> 游戏分类 &nbsp;·&nbsp; 灵感来源：<a href="https://rule34dle.vercel.app/" target="_blank" rel="noopener" style="color:#0084b4;text-decoration:none;">rule34dle</a> &nbsp;·&nbsp; 数据更新：26.05.17</div>
+
+<script>
+const LOCAL_SIGMA=0.30,SIGMA_MIN=0.10,GAUSS_MU=6.75,GAUSS_SIG=0.94;
+const SAMPLE_PARAMS={classic:{wc:0.28,p1:0.9,p2:0.5},timed:{wc:0.33,p1:1.0,p2:0.6}};
+const SITE_URL='bangumi-master.logicry.cc';
+const BANNED_IDS=new Set([150955,185761,190704,226677,231647,262162,278429,339266,303399,321117,381212,386475,236657,467909,488960,425587,449154,529995,518413,567417]);
+let DATA_DATE='';
+let allAnime=[],anime=[],animeByRank=[],rankPosById={},N=0;
+const BIN_EDGES=[6.5,7.5];let bins=[];
+const MAX_LIVES=5,MASTER_GOAL=50,GOD_GOAL=100,MASTER_GOAL_TIMED=30,GOD_GOAL_TIMED=40,TIME_LIMIT_MS=90000;
+let slots={a:null,b:null},stats={correct:0,total:0,streak:0},maxStreak=0,lives=MAX_LIVES,phase='loading',firstRound=true,seenIds=new Set();
+let bestTotal=0,bestStreak=0,bestTimedCorrect=0,bestTimedStreak=0,goState=null,gameLog=null,mistakeCounts={},poolExhausted=false;
+let gameMode='classic',timerId=null,timerEndsAt=0,timerRemaining=TIME_LIMIT_MS;
+let pendingNext=null,runToken=0;
+let boostFlag=false,boostMistakes=0;
+
+function speedFactor(){
+  if(gameMode!=='timed')return 0.9;
+  const s=stats.streak;
+  if(s>=8)return 0.4;
+  if(s>=5)return 0.55;
+  if(s>=2)return 0.75;
+  return 0.9;
+}
+
+function loadBest(){
+  bestTotal=parseInt(localStorage.getItem('bgm_gal_best_total')||'0');
+  bestStreak=parseInt(localStorage.getItem('bgm_gal_best_streak')||'0');
+  bestTimedCorrect=parseInt(localStorage.getItem('bgm_gal_best_timed_correct')||'0');
+  bestTimedStreak=parseInt(localStorage.getItem('bgm_gal_best_timed_streak')||'0');
+}
+function saveBest(){
+  localStorage.setItem('bgm_gal_best_total',bestTotal);
+  localStorage.setItem('bgm_gal_best_streak',bestStreak);
+  localStorage.setItem('bgm_gal_best_timed_correct',bestTimedCorrect);
+  localStorage.setItem('bgm_gal_best_timed_streak',bestTimedStreak);
+}
+function loadMistakeCounts(){
+  try{mistakeCounts=JSON.parse(localStorage.getItem('bgm_gal_mistakes')||'{}');}
+  catch(e){mistakeCounts={};}
+}
+function incrementMistakeCount(id){
+  mistakeCounts[id]=(mistakeCounts[id]||0)+1;
+  localStorage.setItem('bgm_gal_mistakes',JSON.stringify(mistakeCounts));
+}
+function newGameLog(){
+  return{mistakes:[],closeGapWrongs:0,lastWrongCarryId:null,diffBuckets:[0,0,0,0],close02Count:0};
+}
+
+function randn(){const u=1-Math.random(),v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+let audioCtx=null;
+let SOUND_MUTED=false;
+function ensureAudio(){
+  if(audioCtx)return audioCtx;
+  try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
+  return audioCtx;
+}
+function playTone(freq,dur,type,gain,delay){
+  const ctx=ensureAudio();if(!ctx)return;
+  if(ctx.state==='suspended')ctx.resume();
+  const t0=ctx.currentTime+(delay||0);
+  const osc=ctx.createOscillator(),g=ctx.createGain();
+  osc.type=type||'sine';osc.frequency.value=freq;
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(gain||0.18,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  osc.connect(g);g.connect(ctx.destination);
+  osc.start(t0);osc.stop(t0+dur+0.02);
+}
+function playNoise(dur,gain,filterFreq,delay){
+  const ctx=ensureAudio();if(!ctx)return;
+  if(ctx.state==='suspended')ctx.resume();
+  const t0=ctx.currentTime+(delay||0);
+  const len=Math.floor(ctx.sampleRate*dur);
+  const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1);
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=filterFreq||2000;
+  const g=ctx.createGain();
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(gain||0.12,t0+0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  src.connect(filt);filt.connect(g);g.connect(ctx.destination);
+  src.start(t0);src.stop(t0+dur+0.02);
+}
+const SOUND_PRESETS={
+  click:{
+    correct:()=>{playNoise(0.04,0.18,8000,0);playTone(1200,0.06,'sine',0.10,0.02);},
+    wrong:()=>{playNoise(0.08,0.22,800,0);}
+  }
+};
+function playCorrect(){if(SOUND_MUTED)return;SOUND_PRESETS.click.correct();}
+function playWrong(){if(SOUND_MUTED)return;SOUND_PRESETS.click.wrong();}
+
+function sampleNearRank(a,excl,so){
+  const nr=animeByRank.length,ap=rankPosById[a.id]??Math.random(),sig=so??LOCAL_SIGMA;
+  let p=ap+randn()*sig;p=Math.abs(p%2);if(p>1)p=2-p;
+  let i=Math.min(Math.round(p*(nr-1)),nr-1);
+  if(animeByRank[i].id===excl)i=(i+1)%nr;
+  return animeByRank[i];
+}
+
+function sampleNear(a,excl,mode){
+  if(mode==='jump'){
+    const bi=Math.floor(Math.random()*bins.length),bin=bins[bi];
+    let i=bin[Math.floor(Math.random()*bin.length)];
+    if(anime[i].id===excl)i=bin[(bin.indexOf(i)+1)%bin.length];
+    return anime[i];
+  }
+  const s=a.score;let sig;
+  if(s<=GAUSS_MU){sig=LOCAL_SIGMA;}
+  else{const w=Math.exp(-0.5*Math.pow((s-GAUSS_MU)/GAUSS_SIG,2));sig=SIGMA_MIN+(LOCAL_SIGMA-SIGMA_MIN)*w;}
+  return sampleNearRank(a,excl,sig);
+}
+
+function sampleNextCard(a,mode){
+  if(mode==null)mode=Math.random()<SAMPLE_PARAMS[gameMode].wc?'jump':'walk';
+  for(let i=0;i<20;i++){const c=sampleNear(a,a.id,mode);if(!seenIds.has(c.id))return{card:c,mode};}
+  const u=anime.filter(x=>!seenIds.has(x.id)&&x.id!==a.id);
+  return u.length?{card:u[Math.floor(Math.random()*u.length)],mode}:null;
+}
+
+function sampleNextCardConstrained(a){
+  const r=sampleNextCard(a);
+  if(!r)return null;
+  const m=r.mode;let c=r.card;
+  const sp=SAMPLE_PARAMS[gameMode];
+  // Step 1: one-shot probabilistic reroll on diff 0.1 / 0.2.
+  const d10=Math.round(Math.abs(c.score-a.score)*10);
+  let doReroll=false;
+  if(d10===1&&Math.random()<sp.p1)doReroll=true;
+  else if(d10===2&&Math.random()<sp.p2)doReroll=true;
+  if(doReroll){
+    const r2=sampleNextCard(a,m);
+    if(r2)c=r2.card;
+  }
+  // Step 2: tie-bust. Loop up to 10 times until non-tie.
+  let tries=0;
+  while(Math.round(Math.abs(c.score-a.score)*10)===0&&tries<10){
+    const r3=sampleNextCard(a,m);
+    if(!r3)break;
+    c=r3.card;tries++;
+  }
+  return c;
+}
+
+function $(id){return document.getElementById(id);}
+
+function formatDate(d){
+  if(!d)return'';
+  const y=d.substring(0,4),m=d.length>=7?parseInt(d.substring(5,7)):0;
+  return m?y+'年'+m+'月':y+'年';
+}
+
+function coverProxyUrl(e){
+  return e&&e.id?'/api/bgm-cover?id='+encodeURIComponent(e.id):'';
+}
+
+function fillCard(s,e,sm){
+  const img=$('img-'+s);
+  if(img.dataset.objectUrl){URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl='';}
+  img.style.opacity='0';
+  img.dataset.proxyTried='0';
+  img.onload=()=>{img.style.opacity='1';};
+  img.onerror=()=>{
+    const proxy=coverProxyUrl(e);
+    if(proxy&&img.dataset.proxyTried!=='1'){
+      img.dataset.proxyTried='1';
+      img.src=proxy;
+      return;
+    }
+    img.style.opacity='1';
+  };
+  if(e.image_url)img.src=e.image_url;
+  else img.src=coverProxyUrl(e);
+  if(img.complete&&img.naturalWidth>0)img.style.opacity='1';
+  $('name-'+s).textContent=e.name_cn||e.name;
+  const lnk=$('link-'+s);if(sm==='score'&&gameMode!=='timed'){lnk.href='https://bangumi.tv/subject/'+e.id;lnk.classList.add('show');}else{lnk.classList.remove('show');}
+  $('date-'+s).textContent=formatDate(e.air_date)+(e.vote_count?' · '+e.vote_count+' 人评分':'');
+  $('card-'+s).className='card';
+  $('badge-'+s).textContent='';$('badge-'+s).classList.remove('show');
+  const el=$('score-'+s);el.classList.remove('question');
+  if(sm==='score'){el.textContent=e.score.toFixed(1);el.classList.add('show');}
+  else if(sm==='question'){el.textContent='?';el.classList.add('show','question');}
+  else{el.textContent=e.score.toFixed(1);el.classList.remove('show');}
+}
+
+function clearCard(s){
+  const img=$('img-'+s);img.onload=null;img.onerror=null;img.removeAttribute('src');img.style.opacity='0';
+  if(img.dataset.objectUrl){URL.revokeObjectURL(img.dataset.objectUrl);img.dataset.objectUrl='';}
+  $('name-'+s).textContent='—';
+  $('date-'+s).textContent='';
+  $('card-'+s).className='card locked';
+  $('badge-'+s).textContent='';$('badge-'+s).classList.remove('show');
+  const el=$('score-'+s);el.textContent='';el.classList.remove('show','question');
+}
+
+function revealScore(s,e){
+  const el=$('score-'+s);el.textContent=e.score.toFixed(1);
+  el.classList.remove('question');el.classList.add('show');
+}
+
+function hideScores(){
+  ['a','b'].forEach(s=>{$('score-'+s).classList.remove('show','question');$('badge-'+s).classList.remove('show');});
+}
+
+function setPrompt(t,c){const el=$('prompt');el.textContent=t;el.className='prompt'+(c?' '+c:'');}
+function updateStats(){
+  const sk=$('st-streak');
+  sk.textContent=stats.streak;
+  sk.classList.remove('is-speed-2','is-speed-3','is-speed-4');
+  if(gameMode==='timed'){
+    const f=speedFactor();
+    if(f===0.4)sk.classList.add('is-speed-4');
+    else if(f===0.55)sk.classList.add('is-speed-3');
+    else if(f===0.75)sk.classList.add('is-speed-2');
+    $('st-total').textContent=stats.correct;
+    $('st-total-label').textContent='答对';
+  }else{
+    $('st-total').textContent=stats.total;
+    $('st-total-label').textContent='已答';
+  }
+}
+function updateLives(){
+  const el=$('st-lives');
+  if(gameMode==='timed'){
+    const ms=Math.max(0,timerRemaining);
+    const totalSec=Math.ceil(ms/1000);
+    const mm=Math.floor(totalSec/60),ss=totalSec%60;
+    el.textContent='⏱ '+mm+':'+(ss<10?'0':'')+ss;
+    el.classList.add('is-timer');
+    el.classList.toggle('is-timer-warn',ms<=10000);
+    $('st-lives-label').textContent='时间';
+  }else{
+    el.textContent='♥'.repeat(lives)+'♡'.repeat(MAX_LIVES-lives);
+    el.classList.remove('is-timer','is-timer-warn');
+    $('st-lives-label').textContent='机会';
+  }
+}
+
+function bumpStat(id){
+  const el=$(id);el.classList.remove('bump');void el.offsetWidth;
+  el.classList.add('bump');setTimeout(()=>el.classList.remove('bump'),200);
+}
+
+function tickTimer(){
+  timerRemaining=Math.max(0,timerEndsAt-performance.now());
+  updateLives();
+  if(timerRemaining===0){stopTimer();gameOver();}
+}
+function startTimer(){
+  stopTimer();
+  timerRemaining=TIME_LIMIT_MS;
+  timerEndsAt=performance.now()+timerRemaining;
+  updateLives();
+  timerId=setInterval(tickTimer,200);
+}
+function stopTimer(){
+  if(timerId!=null){clearInterval(timerId);timerId=null;}
+}
+let countdownId=null;
+function stopCountdown(){if(countdownId!=null){clearTimeout(countdownId);countdownId=null;}}
+function runCountdown(done){
+  stopCountdown();
+  const myRun=runToken;
+  const seq=['3','2','1','开始!'];
+  let i=0;
+  const step=()=>{
+    if(myRun!==runToken||phase!=='countdown'){countdownId=null;return;}
+    setPrompt(seq[i],'countdown');
+    i++;
+    if(i<seq.length){countdownId=setTimeout(step,700);}
+    else{countdownId=setTimeout(()=>{
+      if(myRun!==runToken)return;
+      countdownId=null;done();
+    },700);}
+  };
+  step();
+}
+
+const TIP_TAG_BLACKLIST=new Set(['游戏','Galgame','galgame','GAL','VN','ADV','AVG','PC','Windows','日本','STEAM','Steam','全年龄','R18','汉化']);
+function pickFrom(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function countWord(n){return['','一','双','三','四','五','六','七','八','九','十'][n]||(n+'');}
+function pickTip(log){
+  if(!log||!log.mistakes.length)return null;
+  const candidates=[];
+  const dk=log.mistakes.find(m=>m.doubleKill);
+  if(dk)candidates.push('《'+dk.blamedName+'》'+pickFrom(['双杀！','又是你？','两连击','梅开二度']));
+  const cross=log.mistakes.find(m=>(mistakeCounts[m.blamedId]||0)>=2);
+  if(cross)candidates.push(pickFrom(['又是','还是','怎么又是'])+'《'+cross.blamedName+'》…');
+  const tagCount={};
+  log.mistakes.forEach(m=>{(m.tags||[]).forEach(t=>{
+    if(TIP_TAG_BLACKLIST.has(t))return;
+    if(/^\d{4}$/.test(t))return;
+    tagCount[t]=(tagCount[t]||0)+1;
+  });});
+  let topTag=null,topN=0;
+  for(const t in tagCount)if(tagCount[t]>topN){topN=tagCount[t];topTag=t;}
+  if(topTag&&topN>=3)candidates.push('#'+topTag+' '+countWord(topN)+'杀');
+  const veryClose=log.mistakes.find(m=>m.diff<=0.1);
+  if(veryClose)candidates.push('运气不太好，《'+veryClose.blamedName+'》和《'+veryClose.otherName+'》只差了 '+veryClose.diff.toFixed(1)+' 分！');
+  if(log.closeGapWrongs>=3)candidates.push(pickFrom(['运气不太好，洗把脸吧','差距太小，不算你的错','这把分差有点欺负人']));
+  return candidates.length?pickFrom(candidates):null;
+}
+function renderDiffBuckets(b){
+  const labels=['≤ 0.2','0.2 – 0.5','0.5 – 1.0','> 1.0'];
+  const color='#e07282';
+  const total=b.reduce((a,c)=>a+c,0)||1;
+  return b.map((n,i)=>{
+    const pct=Math.round(n/total*100);
+    return '<div class="diff-row'+(n===0?' empty':'')+'">'+
+      '<span class="diff-label">'+labels[i]+'</span>'+
+      '<span class="diff-bar-track"><span class="diff-bar-fill" style="width:'+pct+'%;background:'+color+'"></span></span>'+
+      '<span class="diff-count">'+n+'</span>'+
+      '</div>';
+  }).join('');
+}
+
+function gameOver(){
+  phase='gameover';
+  stopTimer();
+  const acc=stats.total?Math.round(stats.correct/stats.total*100):0;
+  const isTimed=gameMode==='timed';
+  const isGod=isTimed?stats.correct>=GOD_GOAL_TIMED:stats.total>=GOD_GOAL;
+  const isMaster=isTimed?stats.correct>=MASTER_GOAL_TIMED:stats.total>=MASTER_GOAL;
+  const newBestTotal=!isTimed&&stats.total>bestTotal;
+  const newBestStreak=!isTimed&&maxStreak>bestStreak;
+  const newBestTimedCorrect=isTimed&&stats.correct>bestTimedCorrect;
+  const newBestTimedStreak=isTimed&&maxStreak>bestTimedStreak;
+  if(newBestTotal)bestTotal=stats.total;
+  if(newBestStreak)bestStreak=maxStreak;
+  if(newBestTimedCorrect)bestTimedCorrect=stats.correct;
+  if(newBestTimedStreak)bestTimedStreak=maxStreak;
+  if(newBestTotal||newBestStreak||newBestTimedCorrect||newBestTimedStreak)saveBest();
+  $('go-icon').textContent=isGod?'⚡':isMaster?'🏆':isTimed?'⏱':'🎬';
+  const t=$('go-title');
+  t.textContent=isGod?'你是古希腊掌管 Galgame 的神！':isMaster?'你是 Galgame 大师！':isTimed?'时间到！':'游戏结束';
+  t.className=(isGod||isMaster)?'is-master':'';
+  const mb=$('go-mode');
+  if(isTimed){mb.textContent='⏱ 限时模式 · 90 秒';mb.classList.add('show');}
+  else{mb.classList.remove('show');}
+  if(isTimed){
+    $('go-stats').innerHTML=
+      (poolExhausted?'<span style="color:var(--pink-deep);font-size:0.78rem">已用完所有符合条件的游戏</span><br>':'')+
+      '答对 <strong>'+stats.correct+'</strong> 题'+(newBestTimedCorrect?'<span class="new-record">新纪录！</span>':'')+'<br>'+
+      '最高连击 <strong>'+maxStreak+'</strong> 连'+(newBestTimedStreak?'<span class="new-record">新纪录！</span>':'')+'<br>'+
+      ((isGod||isMaster)
+        ?'<span style="color:var(--pink)">正确率 '+acc+'% — 恭喜！🎉</span>'
+        :'正确率 <strong>'+acc+'%</strong>');
+    $('go-best').innerHTML=bestTimedCorrect>0&&!(newBestTimedCorrect&&newBestTimedStreak)
+      ?'历史最佳：答对 '+bestTimedCorrect+' 题 &nbsp;·&nbsp; 连击 '+bestTimedStreak
+      :'';
+  }else{
+    $('go-stats').innerHTML=
+      (poolExhausted?'<span style="color:var(--pink-deep);font-size:0.78rem">已用完所有符合条件的游戏</span><br>':'')+
+      '完成题目 <strong>'+stats.total+'</strong> 题'+(newBestTotal?'<span class="new-record">新纪录！</span>':'')+'<br>'+
+      '最高连击 <strong>'+maxStreak+'</strong> 连'+(newBestStreak?'<span class="new-record">新纪录！</span>':'')+'<br>'+
+      ((isGod||isMaster)
+        ?'<span style="color:var(--pink)">正确率 '+acc+'% — 恭喜！🎉</span>'
+        :'正确率 <strong>'+acc+'%</strong>');
+    $('go-best').innerHTML=bestTotal>0&&!(newBestTotal&&newBestStreak)
+      ?'历史最佳：完成 '+bestTotal+' 题 &nbsp;·&nbsp; 连击 '+bestStreak
+      :'';
+  }
+  const tip=(!isTimed&&!isGod&&!isMaster)?pickTip(gameLog):null;
+  if(tip){$('go-tip').textContent=tip;$('go-tip').classList.add('show');}
+  else{$('go-tip').textContent='';$('go-tip').classList.remove('show');}
+  $('go-diff').innerHTML=stats.total>0?renderDiffBuckets(gameLog.diffBuckets):'';
+  $('go-diff-wrap').style.display=stats.total>0?'':'none';
+  goState={mode:gameMode,isGod,isMaster,total:stats.total,correct:stats.correct,maxStreak,acc,bestTotal,bestStreak,bestTimedCorrect,bestTimedStreak,newBestTotal,newBestStreak,newBestTimedCorrect,newBestTimedStreak,tip,diffBuckets:gameLog?gameLog.diffBuckets.slice():[0,0,0,0]};
+  $('gameover').classList.add('show');
+}
+
+function renderPlaying(){
+  if(firstRound){fillCard('a',slots.a,'hidden');fillCard('b',slots.b,'hidden');}
+  else{fillCard('a',slots.a,'score');fillCard('b',slots.b,'question');}
+  $('card-a').classList.remove('locked');$('card-b').classList.remove('locked');
+  setPrompt('哪款 galgame 的评分更高？');updateStats();
+}
+
+function onSelect(side){
+  if(phase!=='playing')return;
+  const wasFirstRound=firstRound;
+  phase='reveal';firstRound=false;
+  $('card-a').classList.add('locked');$('card-b').classList.add('locked');
+  const isTie=slots.a.score===slots.b.score;
+  const isRight=isTie||slots[side].score>slots[side==='a'?'b':'a'].score;
+  const hi=isTie?side:(slots.a.score>slots.b.score?'a':'b');
+  revealScore('a',slots.a);revealScore('b',slots.b);
+  $('badge-'+side).textContent=isRight?'✅':'❌';$('badge-'+side).classList.add('show');
+  if(!isTie&&side!==hi){$('badge-'+hi).textContent='👑';$('badge-'+hi).classList.add('show');}
+  $('card-'+side).classList.add(isRight?'state-correct':'state-wrong');
+  $('card-'+hi).classList.add('state-winner');
+  stats.total++;
+  if(isRight){playCorrect();stats.correct++;stats.streak++;if(stats.streak>maxStreak)maxStreak=stats.streak;bumpStat('st-streak');
+    if(stats.streak>=5){boostFlag=true;boostMistakes=0;}
+  }
+  else{playWrong();stats.streak=0;if(gameMode!=='timed'){lives--;updateLives();}
+    if(boostFlag){boostMistakes++;if(boostMistakes>=2)boostFlag=false;}
+  }
+  bumpStat('st-total');updateStats();
+  const diffNum=Math.abs(slots.a.score-slots.b.score);
+  const diff=diffNum.toFixed(1);
+  if(!isTie){
+    const d10=Math.round(diffNum*10);
+    const b=d10<=2?0:d10<=5?1:d10<=10?2:3;
+    gameLog.diffBuckets[b]++;
+    if(d10<=2)gameLog.close02Count++;
+  }
+  if(!isRight&&!isTie){
+    const prevCarry=gameLog.lastWrongCarryId;
+    const blamedSides=wasFirstRound?['a','b']:['b'];
+    const doubleKill=prevCarry!=null&&slots.a.id===prevCarry;
+    blamedSides.forEach(bs=>{
+      const blamed=slots[bs];
+      const other=slots[bs==='a'?'b':'a'];
+      gameLog.mistakes.push({
+        blamedId:blamed.id,
+        blamedName:blamed.name_cn||blamed.name,
+        otherName:other.name_cn||other.name,
+        tags:Array.isArray(blamed.tags)?blamed.tags.slice(0,8):[],
+        diff:diffNum,
+        doubleKill
+      });
+      incrementMistakeCount(blamed.id);
+    });
+    gameLog.lastWrongCarryId=slots.b.id;
+    if(Math.round(diffNum*10)<=2)gameLog.closeGapWrongs++;
+  }
+  setPrompt(
+    isTie?'平局！两部都是'+slots.a.score.toFixed(1)+'分':
+    isRight?'✓ 答对了！分差'+diff+'分':
+    '✗ 答错了，分差'+diff+(gameMode==='timed'?'分':'分（剩余机会'+lives+'）'),
+    isRight?'correct':'wrong'
+  );
+  const f=speedFactor();
+  if(gameMode==='timed')preloadNextCard();
+  const myRun=runToken;
+  setTimeout(()=>{
+    if(myRun!==runToken||phase==='gameover')return;
+    if(gameMode!=='timed'&&lives<=0)gameOver();
+    else if(gameMode==='timed'&&timerRemaining<=0)gameOver();
+    else advance();
+  },Math.round(1800*f));
+}
+
+function preloadNextCard(){
+  if(pendingNext)return;
+  const nx=sampleNextCardConstrained(slots.b);
+  if(!nx)return;
+  seenIds.add(nx.id);
+  pendingNext=nx;
+  if(nx.image_url){const im=new Image();im.src=nx.image_url;}
+}
+
+function advance(){
+  hideScores();
+  const f=speedFactor();
+  const myRun=runToken;
+  setTimeout(()=>{
+    if(myRun!==runToken)return;
+    const ov=$('overlay-b');
+    ov.style.transitionDuration=Math.round(250*f)+'ms';
+    ov.classList.add('flash');
+    setTimeout(()=>{
+      if(myRun!==runToken)return;
+      slots.a=slots.b;
+      let nx=pendingNext;pendingNext=null;
+      if(!nx){
+        nx=sampleNextCardConstrained(slots.a);
+        if(!nx){ov.classList.remove('flash');poolExhausted=true;gameOver();return;}
+        seenIds.add(nx.id);
+      }
+      slots.b=nx;
+      ov.classList.remove('flash');
+      phase='playing';renderPlaying();
+    },Math.round(280*f));
+  },Math.round(400*f));
+}
+
+function buildBins(p){
+  const r=BIN_EDGES.concat([Infinity]).map(()=>[]);
+  p.forEach((a,i)=>{const b=BIN_EDGES.findIndex(e=>a.score<e);r[b===-1?BIN_EDGES.length:b].push(i);});
+  return r.filter(b=>b.length>0);
+}
+
+function buildRankOrder(p){
+  animeByRank=p.slice().sort((a,b)=>(!a.rank&&!b.rank)?0:!a.rank?1:!b.rank?-1:a.rank-b.rank);
+  rankPosById={};const nr=animeByRank.length;
+  animeByRank.forEach((a,i)=>{rankPosById[a.id]=i/Math.max(1,nr-1);});
+}
+
+function applyFilters(){
+  const mv=parseInt($('sl-votes').value),ym=parseInt($('sl-yr-min').value),
+        yx=parseInt($('sl-yr-max').value),nlb=ym<=1996,
+        ng=$('cb-guochan').checked,nt=$('cb-theatre').checked,
+        no=$('cb-ova').checked,np=$('cb-pamen').checked,
+        nom=$('cb-oumei').checked,ns=$('cb-short').checked,
+        nr=$('cb-recap').checked;
+  return allAnime.filter(a=>{
+    if(BANNED_IDS.has(a.id))return false;
+    if(a.vote_count<mv)return false;
+    if(a.air_date){const am=a.air_date.substring(0,7);if(!nlb&&am<ym+'-01')return false;if(am>yx+'-12')return false;}
+    if(DATA_DATE&&a.air_date&&a.air_date>DATA_DATE)return false;
+    const tags=Array.isArray(a.tags)?a.tags:[];
+    if(ng&&tags.includes('国产'))return false;
+    if(nt&&(tags.includes('FD')||tags.includes('FanDisc')||tags.includes('Fan Disk')))return false;
+    if(no&&tags.includes('同人'))return false;
+    if(np&&tags.includes('短篇'))return false;
+    if(nom&&(tags.includes('乙女')||tags.includes('BL')||tags.includes('女性向')))return false;
+    if(ns&&(tags.includes('R18')||tags.includes('拔作')||tags.includes('抜きゲー')))return false;
+    if(nr&&tags.includes('全年龄'))return false;
+    return true;
+  });
+}
+
+function restart(){
+  stopTimer();stopCountdown();pendingNext=null;runToken++;
+  $('overlay-a').classList.remove('flash');$('overlay-b').classList.remove('flash');
+  $('gameover').classList.remove('show');
+  $('go-tip').textContent='';$('go-tip').classList.remove('show');
+  $('go-diff').innerHTML='';$('go-diff-wrap').open=false;
+  lives=MAX_LIVES;maxStreak=0;timerRemaining=TIME_LIMIT_MS;updateLives();
+  boostFlag=false;boostMistakes=0;
+  const f=applyFilters();
+  anime=f.slice().sort((a,b)=>a.score-b.score);N=anime.length;
+  bins=buildBins(anime);buildRankOrder(f);
+  $('pool-size').textContent=N+' 款';
+  stats={correct:0,total:0,streak:0};firstRound=true;seenIds=new Set();
+  gameLog=newGameLog();
+  poolExhausted=false;
+  updateStats();
+  if(N<2){
+    phase='empty';
+    setPrompt(N===0?'当前筛选下没有游戏，请调整过滤设置':'符合条件的游戏太少，请放宽过滤设置','wrong');
+    clearCard('a');clearCard('b');
+    return;
+  }
+  const si=Math.floor(Math.random()*N);
+  slots.a=anime[si];seenIds.add(slots.a.id);
+  slots.b=sampleNextCardConstrained(slots.a);
+  if(!slots.b){
+    phase='empty';
+    setPrompt('符合条件的游戏太少，请放宽过滤设置','wrong');
+    clearCard('a');clearCard('b');
+    return;
+  }
+  seenIds.add(slots.b.id);
+  if(gameMode==='timed'){
+    phase='countdown';
+    renderPlaying();
+    $('card-a').classList.add('locked');$('card-b').classList.add('locked');
+    runCountdown(()=>{
+      phase='playing';
+      $('card-a').classList.remove('locked');$('card-b').classList.remove('locked');
+      setPrompt('哪款 galgame 的评分更高？');
+      startTimer();
+    });
+  }else{
+    phase='playing';renderPlaying();
+  }
+}
+
+async function refreshBangumiAuth(){
+  const login=$('btn-bgm-login'),logout=$('btn-bgm-logout'),status=$('bgm-auth-status');
+  if(!login||!logout||!status)return;
+  login.classList.add('is-hidden');
+  logout.classList.add('is-hidden');
+  status.textContent='正在检查 Bangumi 登录状态...';
+  try{
+    const res=await fetch('/api/bgm-me',{cache:'no-store'});
+    const data=await res.json();
+    if(data.authenticated){
+      login.classList.add('is-hidden');
+      logout.classList.remove('is-hidden');
+      status.textContent='已登录 Bangumi：'+(data.nickname||data.username||data.id||'当前账号')+'。受限封面会按该账号权限加载。';
+    }else{
+      login.classList.remove('is-hidden');
+      logout.classList.add('is-hidden');
+      status.textContent='未登录时只能使用公开封面；登录后可按账号权限获取受限封面。';
+    }
+  }catch(err){
+    login.classList.remove('is-hidden');
+    logout.classList.add('is-hidden');
+    status.textContent='无法检查 Bangumi 登录状态；部署函数可用后再尝试登录。';
+  }
+}
+
+function initControls(){
+  const yMin=$('sl-yr-min'),yMax=$('sl-yr-max'),lblMin=$('lbl-yr-min'),lblMax=$('lbl-yr-max');
+  const yrCap=parseInt(yMax.max);
+  refreshBangumiAuth();
+  const logout=$('btn-bgm-logout');
+  if(logout){
+    logout.addEventListener('click',async()=>{
+      logout.disabled=true;
+      try{
+        await fetch('/api/bgm-me?logout=1',{method:'DELETE',cache:'no-store'});
+      }catch(err){
+      }finally{
+        logout.disabled=false;
+        refreshBangumiAuth();
+      }
+    });
+  }
+  function updatePresetActive(){
+    const lo=parseInt(yMin.value),hi=parseInt(yMax.value);
+    const recent=hi===yrCap&&lo===yrCap-20;
+    $('btn-preset-recent').classList.toggle('active',recent);
+  }
+  $('sl-votes').addEventListener('input',()=>$('lbl-votes').textContent=$('sl-votes').value);
+  yMin.addEventListener('input',()=>{const v=parseInt(yMin.value);lblMin.textContent=v<=1996?'不限':v;updatePresetActive();});
+  yMax.addEventListener('input',()=>{lblMax.textContent=yMax.value;updatePresetActive();});
+  $('btn-preset-recent').addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
+    const lo=parseInt(yMin.value),hi=parseInt(yMax.value);
+    const active=hi===yrCap&&lo===yrCap-20;
+    if(active){
+      yMin.value=parseInt(yMin.min);yMax.value=yrCap;
+      lblMin.textContent='不限';lblMax.textContent=yrCap;
+    }else{
+      yMax.value=yrCap;yMin.value=yrCap-20;
+      lblMax.textContent=yrCap;lblMin.textContent=yrCap-20;
+    }
+    updatePresetActive();
+    restart();
+  });
+  updatePresetActive();
+  $('btn-restart').addEventListener('click',restart);
+  $('go-restart').addEventListener('click',restart);
+  function applyModeButton(){
+    const btn=$('btn-mode');
+    const active=gameMode==='timed';
+    btn.setAttribute('aria-pressed',active?'true':'false');
+    btn.textContent=active?'⏱ 限时模式 · 开':'⏱ 限时模式';
+  }
+  $('btn-mode').addEventListener('click',()=>{
+    if(gameMode==='timed'){
+      gameMode='classic';applyModeButton();restart();
+    }else{
+      $('mode-confirm').classList.add('show');
+    }
+  });
+  $('btn-mode-confirm').addEventListener('click',()=>{
+    $('mode-confirm').classList.remove('show');
+    gameMode='timed';applyModeButton();restart();
+  });
+  $('btn-mode-cancel').addEventListener('click',()=>$('mode-confirm').classList.remove('show'));
+  $('mode-confirm').addEventListener('click',e=>{if(e.target===$('mode-confirm'))$('mode-confirm').classList.remove('show');});
+  $('btn-help').addEventListener('click',()=>$('help-overlay').classList.add('show'));
+  function applyMute(){
+    const b=$('btn-mute');
+    b.textContent=SOUND_MUTED?'🔇':'🔊';
+    b.classList.toggle('is-muted',SOUND_MUTED);
+  }
+  SOUND_MUTED=localStorage.getItem('bgm_muted')==='1';
+  applyMute();
+  $('btn-mute').addEventListener('click',()=>{
+    SOUND_MUTED=!SOUND_MUTED;
+    localStorage.setItem('bgm_muted',SOUND_MUTED?'1':'0');
+    applyMute();
+    if(!SOUND_MUTED)playCorrect();
+  });
+  $('btn-help-close').addEventListener('click',()=>$('help-overlay').classList.remove('show'));
+  $('help-overlay').addEventListener('click',e=>{if(e.target===$('help-overlay'))$('help-overlay').classList.remove('show');});
+}
+
+function drawResultCard(){
+  const s=goState;
+  const W=360,H=500,DPR=2;
+  const cv=document.createElement('canvas');
+  cv.width=W*DPR;cv.height=H*DPR;
+  const ctx=cv.getContext('2d');
+  ctx.scale(DPR,DPR);
+  const FONT='"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft YaHei",sans-serif';
+
+  // Background
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  // Top accent bar
+  const barGrad=ctx.createLinearGradient(0,0,W,0);
+  barGrad.addColorStop(0,'#f09199');barGrad.addColorStop(1,'#e07282');
+  ctx.fillStyle=barGrad;
+  ctx.fillRect(0,0,W,7);
+
+  // Game title
+  ctx.font='13px '+FONT;
+  ctx.fillStyle='#8e8ea0';
+  ctx.textAlign='center';
+  ctx.fillText('目标是Galgame大师',W/2,44);
+
+  const isTimed=s.mode==='timed';
+
+  // Icon
+  ctx.font='54px serif';
+  ctx.fillText(s.isGod?'⚡':s.isMaster?'🏆':isTimed?'⏱':'🎬',W/2,108);
+
+  // Result heading
+  const heading=s.isGod?'你是古希腊掌管 Galgame 的神！':s.isMaster?'你是 Galgame 大师！':isTimed?'时间到！':'游戏结束';
+  ctx.font='bold '+(s.isGod?17:22)+'px '+FONT;
+  if(s.isGod||s.isMaster){
+    const tg=ctx.createLinearGradient(W/2-80,0,W/2+80,0);
+    tg.addColorStop(0,'#f09199');tg.addColorStop(1,'#e07282');
+    ctx.fillStyle=tg;
+  }else{
+    ctx.fillStyle='#1c1c2e';
+  }
+  ctx.fillText(heading,W/2,148);
+
+  // Mode badge (timed only)
+  if(isTimed){
+    const badge='⏱ 限时模式 · 90 秒';
+    ctx.font='11px '+FONT;
+    const bw=ctx.measureText(badge).width+18;
+    const bx=W/2-bw/2,by=160;
+    ctx.fillStyle='#fbeef0';
+    ctx.beginPath();ctx.roundRect(bx,by,bw,18,9);ctx.fill();
+    ctx.fillStyle='#e07282';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(badge,W/2,by+9);
+    ctx.textBaseline='alphabetic';
+  }
+
+  // Divider
+  ctx.strokeStyle='#d8d8e8';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(48,isTimed?188:168);ctx.lineTo(W-48,isTimed?188:168);ctx.stroke();
+
+  // Stats rows
+  const rows=isTimed?[
+    ['答对题数',s.correct+' 题'],
+    ['最高连击',s.maxStreak+' 连'],
+    ['正确率',s.acc+'%'],
+  ]:[
+    ['完成题目',s.total+' 题'],
+    ['最高连击',s.maxStreak+' 连'],
+    ['正确率',s.acc+'%'],
+  ];
+  let ry=isTimed?228:212;
+  rows.forEach(([label,val])=>{
+    ctx.font='13px '+FONT;ctx.fillStyle='#8e8ea0';ctx.textAlign='left';
+    ctx.fillText(label,72,ry);
+    ctx.font='bold 14px '+FONT;ctx.fillStyle='#1c1c2e';ctx.textAlign='right';
+    ctx.fillText(val,W-72,ry);
+    ry+=38;
+  });
+
+  // Tip line
+  if(s.tip){
+    ctx.font='bold 13px '+FONT;ctx.fillStyle='#e07282';ctx.textAlign='center';
+    ctx.fillText(s.tip,W/2,ry+2);
+    ry+=26;
+  }
+
+  // Historical best
+  const bestLine=isTimed
+    ?(s.bestTimedCorrect>0?'历史最佳：答对 '+s.bestTimedCorrect+' 题  ·  连击 '+s.bestTimedStreak:'')
+    :(s.bestTotal>0?'历史最佳：完成 '+s.bestTotal+' 题  ·  连击 '+s.bestStreak:'');
+  if(bestLine){
+    ctx.strokeStyle='#d8d8e8';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(48,ry+8);ctx.lineTo(W-48,ry+8);ctx.stroke();
+    ctx.font='12px '+FONT;ctx.fillStyle='#8e8ea0';ctx.textAlign='center';
+    ctx.fillText(bestLine,W/2,ry+30);
+  }
+
+  // Footer
+  ctx.font='11px '+FONT;ctx.fillStyle='#c8c8d8';ctx.textAlign='center';
+  const footer=SITE_URL?'数据来源：Bangumi 游戏分类 · bgm.tv  |  '+SITE_URL:'数据来源：Bangumi 游戏分类 · bgm.tv';
+  ctx.fillText(footer,W/2,H-18);
+
+  return cv;
+}
+
+async function shareResult(){
+  const cv=drawResultCard();
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='galgame-master.png';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function init(){
+  initControls();
+  loadBest();
+  loadMistakeCounts();
+  const [list,meta]=await Promise.all([
+    fetch('data/galgame_list.json').then(r=>r.json()),
+    fetch('data/galgame_meta.json').then(r=>r.json()).catch(()=>({})),
+  ]);
+  allAnime=list;
+  DATA_DATE=(meta&&meta.collected_at)||'';
+  $('loading').style.display='none';
+  restart();
+}
+
+init();
+</script>
+</body>
+</html>

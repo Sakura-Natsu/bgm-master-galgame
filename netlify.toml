@@ -1,0 +1,27 @@
+[build]
+publish = "."
+functions = "netlify/functions"
+
+[[redirects]]
+from = "/api/bgm-cover"
+to = "/.netlify/functions/bgm-cover"
+status = 200
+force = true
+
+[[redirects]]
+from = "/api/bgm-oauth-start"
+to = "/.netlify/functions/bgm-oauth-start"
+status = 200
+force = true
+
+[[redirects]]
+from = "/api/bangumi-authorize"
+to = "/.netlify/functions/bangumi-authorize"
+status = 200
+force = true
+
+[[redirects]]
+from = "/api/bgm-me"
+to = "/.netlify/functions/bgm-me"
+status = 200
+force = true

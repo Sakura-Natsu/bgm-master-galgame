@@ -1,7 +1,7 @@
 # 目标是 Galgame 大师
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flogicolors%2Fbangumi-master&env=BANGUMI_APPID%2CBANGUMI_APPSEC%2CBANGUMI_REDIRECT_URI&envDescription=Bangumi%20OAuth%20%E9%85%8D%E7%BD%AE&envLink=https%3A%2F%2Fgithub.com%2Flogicolors%2Fbangumi-master%23bangumi-oauth-%E9%85%8D%E7%BD%AE)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/logicolors/bangumi-master)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FSakura-Natsu%2Fbgm-master-galgame&env=BANGUMI_APPID%2CBANGUMI_APPSEC%2CBANGUMI_REDIRECT_URI&envDescription=Bangumi%20OAuth%20%E9%85%8D%E7%BD%AE&envLink=https%3A%2F%2Fgithub.com%2FSakura-Natsu%2Fbgm-master-galgame%23bangumi-oauth-%E9%85%8D%E7%BD%AE)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Sakura-Natsu/bgm-master-galgame)
 
 一个基于 Bangumi 数据的 Galgame 评分挑战单页应用。玩家每轮从两部作品中选择评分更高的一部，应用会根据 Bangumi 评分、评分人数、年份和标签筛选候选池，并支持普通模式与限时模式。
 
@@ -88,7 +88,7 @@ BANGUMI_TOKEN=部署方全局 token
 点击 README 顶部的 Vercel 按钮，或访问：
 
 ```text
-https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flogicolors%2Fbangumi-master&env=BANGUMI_APPID%2CBANGUMI_APPSEC%2CBANGUMI_REDIRECT_URI
+https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FSakura-Natsu%2Fbgm-master-galgame&env=BANGUMI_APPID%2CBANGUMI_APPSEC%2CBANGUMI_REDIRECT_URI
 ```
 
 部署设置：
@@ -110,7 +110,7 @@ https://你的域名/api/bgm-me
 点击 README 顶部的 Netlify 按钮，或访问：
 
 ```text
-https://app.netlify.com/start/deploy?repository=https://github.com/logicolors/bangumi-master
+https://app.netlify.com/start/deploy?repository=https://github.com/Sakura-Natsu/bgm-master-galgame
 ```
 
 部署设置已在 `netlify.toml` 中声明：
